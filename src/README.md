@@ -43,8 +43,8 @@ You can organize your source files in flat or modular hierarchies:
 ### Modular Architecture Example
 ```text
 src/
-├── main.c                  # CLI entry point, argument parsing, high-level coordination
-├── greeting.c              # Public module implementation (declared in include/greeting.h)
+├── main.c                  # SDL3 callback entry point & CLI argument parsing
+├── app.c                   # Public module implementation (declared in include/app.h)
 ├── core/
 │   ├── engine.c            # Core engine logic
 │   └── engine_internal.h   # Private engine header (not exposed in include/)
@@ -62,6 +62,6 @@ src/
 ## Starter Files Included
 
 - **`main.c`**:
-  Demonstrates clean command-line argument handling (`--version`, custom name argument), return code usage (`EXIT_SUCCESS`, `EXIT_FAILURE`), and calling module functions.
-- **`greeting.c`**:
-  Implementation of the sample module defined in `include/greeting.h`, demonstrating buffer bounds checking, safe default fallback, and clean formatting.
+  SDL3 callback entry point (`SDL_MAIN_USE_CALLBACKS`, `SDL_AppInit`, `SDL_AppEvent`, `SDL_AppIterate`, `SDL_AppQuit`) with CLI flag parsing (`--version`, `--help`, `--audio`, `--camera`, `--all`, `--no-video`).
+- **`app.c`**:
+  Implementation of the SDL3 starter shell defined in `include/app.h`, demonstrating video/2D rendering, audio playback streaming, camera frame capture/display, and clean shutdown.

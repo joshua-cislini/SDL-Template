@@ -7,12 +7,12 @@ This directory contains public C interface header files (`.h`) for your project,
 ## How It Works
 
 1. **Recursive Include Path Discovery**:
-   - The build system (`Makefile`) recursively discovers `include/` and **all nested subdirectories** (e.g., `include/`, `include/core/`, `include/SDL2/`, `include/my_lib/`).
+   - The build system (`Makefile`) recursively discovers `include/` and **all nested subdirectories** (e.g., `include/`, `include/core/`, `include/SDL3/`, `include/my_lib/`).
    - Every detected directory is automatically prepended to the compiler command with `-I<path>`.
    - You can include headers placed directly in `include/` or nested folders without needing complex relative paths:
      ```c
-     #include "greeting.h"
-     #include "SDL2/SDL.h"  /* If include/SDL2/ exists */
+     #include "app.h"
+     #include <SDL3/SDL.h>  /* Provided by include/SDL3/ */
      ```
 
 2. **Language Server & Tooling Sync**:
@@ -64,7 +64,7 @@ int my_function(int a);
 ```
 
 ### 4. Doxygen / Docstrings
-Document function contracts, parameter requirements, nullability, and return values directly in the header (see `include/greeting.h` for an example using `@brief`, `@param`, and `@return`).
+Document function contracts, parameter requirements, nullability, and return values directly in the header (see `include/app.h` for an example using `@brief`, `@param`, and `@return`).
 
 ---
 
@@ -76,7 +76,9 @@ You can drop single-header C libraries (such as `stb_image.h`, `cJSON.h`, `minia
 
 ---
 
-## Starter File Included
+## Starter Files Included
 
-- **`greeting.h`**:
-  An example public module interface demonstrating clean documentation, include guards, standard type inclusion (`size_t`), and defensive API design.
+- **`app.h`**:
+  Public application configuration (`AppConfig`), runtime state (`AppState`), and lifecycle interface (`app_default_config`, `app_init`, `app_event`, `app_iterate`, `app_quit`) wrapping SDL3 video/screen, audio, and camera.
+- **`SDL3/`**:
+  Pre-integrated SDL 3.4.20 headers (with a `.clang-format` file disabling reformatting of upstream headers).

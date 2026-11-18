@@ -1,6 +1,6 @@
-# Modern C Project Template
+# SDL3 C Project Template
 
-A professional, cross-platform, zero-friction C project template designed for real-world applications and libraries.
+A professional, cross-platform, zero-friction C project template pre-integrated with **SDL 3.4.20** and ready out of the box for applications using **screen/video, 2D/GPU rendering, audio, camera, and input**.
 
 Compiles out of the box on **Windows** (MSYS2 UCRT64, native `cmd.exe`, PowerShell, Git Bash), **Linux**, and **macOS** using **GNU Make**, **GCC** or **Clang**, **clangd**, **GDB/LLDB**, and **VS Code**.
 
@@ -72,23 +72,26 @@ Each directory contains a dedicated `README.md` detailing its conventions, disco
 ├── LICENSE                   # MIT License
 │
 ├── src/                      # [README] C source files (recursively discovered and compiled)
-│   ├── main.c                # Application entry point (excluded during test & library builds)
-│   ├── greeting.c            # Example module implementation
+│   ├── main.c                # SDL3 callback entry point (SDL_AppInit/Event/Iterate/Quit)
+│   ├── app.c                 # Modular SDL3 shell (video/screen, audio, camera lifecycle)
 │   └── README.md             # Guide: source organization, main exclusion, internal headers
 │
 ├── include/                  # [README] Public and third-party interface headers
-│   ├── greeting.h            # Example public module interface
+│   ├── app.h                 # Application configuration (AppConfig) & runtime state (AppState)
+│   ├── SDL3/                 # Pre-integrated SDL 3.4.20 headers (formatting disabled)
 │   └── README.md             # Guide: header inclusion, API contracts, header-only libs
 │
 ├── lib/                      # [README] Drop-in static & import libraries (.a, .lib, .dll.a, .so, .dylib)
+│   ├── libSDL3.dll.a         # SDL 3.4.20 MinGW-w64 import library (Windows)
 │   └── README.md             # Guide: auto-linking, smart selection, order-independent linking
 │
 ├── bin/                      # [README] Drop-in runtime dynamic libraries (.dll, .so, .dylib)
+│   ├── SDL3.dll              # SDL 3.4.20 runtime DLL (auto-copied to build/<mode>/bin/)
 │   └── README.md             # Guide: automatic deployment to build/bin, rpath handling
 │
 ├── tests/                    # [README] Standalone unit test suites
 │   ├── test_framework.h      # Minimal, dependency-free test assertion macros
-│   ├── test_greeting.c       # Example test suite
+│   ├── test_app.c            # Headless SDL3 subsystem & lifecycle tests (dummy drivers)
 │   └── README.md             # Guide: writing tests, running suites, custom frameworks
 │
 ├── build/                    # Generated automatically during compilation (ignored by git)
@@ -161,20 +164,22 @@ Open a terminal in the project directory:
 # 1. Build in debug mode (default)
 make
 
-# 2. Run the application
+# 2. Run the SDL3 starter window
 make run
 
-# 3. Pass command-line arguments to the application
-make run ARGS="Ada"
+# 3. Run with specific subsystems enabled (audio test tone, camera, or all)
+make run ARGS="--audio"
+make run ARGS="--camera"
+make run ARGS="--all"
 
-# 4. Build and execute all unit test suites
+# 4. Print project & linked SDL version
+make run ARGS="--version"
+
+# 5. Build and execute all unit test suites (headless SDL dummy drivers)
 make test
 
-# 5. Build in release mode (optimized -O2, stripped symbols)
+# 6. Build in release mode (optimized -O2, stripped symbols)
 make release
-
-# 6. Build and run in release mode
-make release run ARGS="World"
 
 # 7. Check build configuration, detected libraries, and paths
 make info
@@ -184,6 +189,19 @@ make clean
 ```
 
 > **Windows Note**: If `make` is not aliased, run `mingw32-make` instead. All targets, variables, and flags work identically.
+
+---
+
+## SDL3 Starter Architecture (`app.h` / `app.c` / `main.c`)
+
+SDL **3.4.20** is pre-installed in the template (`include/SDL3/`, `lib/libSDL3.dll.a`, `bin/SDL3.dll`) and ready for any new project:
+
+- **`src/main.c`**: Uses SDL3's callback entry points (`#define SDL_MAIN_USE_CALLBACKS 1` with `SDL_AppInit`, `SDL_AppEvent`, `SDL_AppIterate`, `SDL_AppQuit`) and parses `--audio`, `--camera`, `--all`, `--no-video`, `--version`, and `--help`.
+- **`include/app.h` & `src/app.c`**: Configure which subsystems your project needs via `AppConfig`:
+  - **Screen / 2D Rendering (`enable_video`)**: Creates an `SDL_Window` + VSync `SDL_Renderer` (`SDL_CreateWindowAndRenderer`) and displays live subsystem HUD status.
+  - **Audio (`enable_audio`)**: Opens a default playback `SDL_AudioStream` (`SDL_AUDIO_F32`, 48 kHz, stereo) via `SDL_OpenAudioDeviceStream`, ready for custom sample generation or mixing (includes a toggleable 440 Hz test tone via `SPACE` or `play_test_tone`).
+  - **Camera (`enable_camera`)**: Enumerates cameras via `SDL_GetCameras`, opens the first available `SDL_Camera`, and streams acquired frames (`SDL_AcquireCameraFrame`) onto an aspect-fitted `SDL_Texture` when video is active.
+- **Starting a New Project**: Customize `app_default_config()` in `src/app.c` (or edit `app_init` / `app_event` / `app_iterate` / `app_quit`) to enable the subsystems you want by default. To hide the Windows console window on release GUI builds, set `RELEASE_LDFLAGS ?= -s -mwindows` or `EXTRA_LDFLAGS ?= -mwindows` in `config.mk`.
 
 ---
 
@@ -200,7 +218,7 @@ All project settings are centralized in [`config.mk`](config.mk). The generic [`
 | `PROJECT_TYPE` | `executable` | Target type: `executable`, `static` library (`lib<name>.a`), or `shared` library (`.dll` / `.so` / `.dylib`). |
 | `BUILD` | `debug` | Default build mode: `debug` or `release`. Shortcut: `make release`. |
 | `CC` | `gcc` | C compiler (`gcc`, `clang`, or cross-compilation triple). |
-| `C_STANDARD` | `c17` | C language standard: `c99`, `c11`, `c17`, `c23`, `gnu17`. |
+| `C_STANDARD` | `c23` | C language standard: `c99`, `c11`, `c17`, `c23`, `gnu17`. |
 | `WARNINGS` | `-Wall -Wextra ...` | Strict compilation warning flags. |
 | `WERROR` | `0` | When set to `1`, treats all warnings as fatal errors (recommended for CI). |
 | `DEBUG_CFLAGS` | `-g3 -O0 -DDEBUG` | Compiler flags applied only in debug mode. |
@@ -208,11 +226,11 @@ All project settings are centralized in [`config.mk`](config.mk). The generic [`
 | `DEBUG_LDFLAGS` | *(empty)* | Linker flags applied in debug mode. |
 | `RELEASE_LDFLAGS` | `-s` | Linker flags applied in release mode (symbol stripping; omitted on macOS). |
 | `SANITIZE` | *(empty)* | Sanitizers to enable (e.g. `make SANITIZE=address,undefined`). |
-| `EXTRA_CPPFLAGS` | *(empty)* | Additional preprocessor flags (e.g. `-DENABLE_FEATURE=1`). |
+| `EXTRA_CPPFLAGS` | `-isystem $(INC_DIR)` | Additional preprocessor flags (treats `include/` third-party headers like `SDL3/` as system headers). |
 | `EXTRA_CFLAGS` | *(empty)* | Additional compiler flags (e.g. `-march=native`). |
-| `EXTRA_LDFLAGS` | *(empty)* | Additional linker flags (e.g. `-mwindows` on Windows for GUI apps). |
+| `EXTRA_LDFLAGS` | *(empty)* | Additional linker flags (e.g. `-mwindows` on Windows for GUI apps without console). |
 | `LDLIBS` | `-lm` | System libraries linked via toolchain (e.g. `-lws2_32 -lgdi32 -lpthread`). |
-| `PKG_CONFIG_PACKAGES` | *(empty)* | Space-separated package list for `pkg-config` (e.g. `sdl2 libcurl`). |
+| `PKG_CONFIG_PACKAGES` | *(empty)* | Space-separated package list for `pkg-config` (e.g. `sdl3 libcurl`). |
 | `SRC_DIR` | `src` | Directory containing application/library source code. |
 | `INC_DIR` | `include` | Directory containing public/third-party header files. |
 | `LIB_DIR` | `lib` | Directory containing drop-in static and import libraries. |
@@ -220,7 +238,7 @@ All project settings are centralized in [`config.mk`](config.mk). The generic [`
 | `TEST_DIR` | `tests` | Directory containing unit test suites (`test_*.c`). |
 | `BUILD_DIR` | `build` | Output directory for all compiled object and binary files. |
 | `AUTO_LINK` | `1` | Automatically link all libraries discovered in `lib/`. Set `0` for manual linking. |
-| `AUTO_LINK_EXCLUDE`| *(empty)* | Filenames or patterns in `lib/` to exclude from auto-linking. |
+| `AUTO_LINK_EXCLUDE`| `libSDL3_test.a ...` | Filenames or patterns in `lib/` to exclude from auto-linking (excludes Windows `.dll.a` on Unix). |
 | `MAIN_SRC` | `$(SRC_DIR)/main.c` | Source file containing `main()`. Excluded when building tests or libraries. |
 | `COMPILE_COMMANDS` | `1` | Automatically write `compile_commands.json` on make invocations. |
 | `CLANG_FORMAT` | `clang-format` | Name or path of the `clang-format` executable. |
@@ -333,17 +351,17 @@ make test
 Use the lightweight, zero-dependency helper [`tests/test_framework.h`](tests/test_framework.h):
 
 ```c
-#include "greeting.h"
+#include "app.h"
 #include "test_framework.h"
 
-static void test_greeting_custom(void) {
-    char buf[64];
-    greeting_format(buf, sizeof buf, "Linus");
-    CHECK_EQ_STR("Hello, Linus!", buf);
+static void test_defaults(void) {
+    const AppConfig cfg = app_default_config();
+    CHECK_EQ_INT(1280, cfg.width);
+    CHECK(cfg.enable_video);
 }
 
 int main(void) {
-    RUN_TEST(test_greeting_custom);
+    RUN_TEST(test_defaults);
     return TEST_REPORT();
 }
 ```
@@ -433,7 +451,7 @@ See [`.github/workflows/README.md`](.github/workflows/README.md) for local verif
 | `tidy` | Run `clang-tidy` static analysis | `make tidy` |
 | `info` | Display detected toolchains, flags, and libraries | `make info` |
 | `help` | Print Makefile usage and variable summary | `make help` |
-| `run-<test_name>` | Build and execute a single test suite | `make run-test_greeting` |
+| `run-<test_name>` | Build and execute a single test suite | `make run-test_app` |
 
 ---
 
@@ -452,15 +470,17 @@ VS Code's internal debug console cannot forward standard input to GDB on Windows
 ### 3. Linking math functions (`sin`, `sqrt`, `pow`)
 `-lm` is linked by default via `LDLIBS ?= -lm` in `config.mk`. If you receive undefined reference errors, ensure you have included `<math.h>`.
 
-### 4. How to add a library like SDL2 or Raylib?
-- **Option A (Drop-in)**:
-  - Put headers into `include/` (e.g. `include/SDL2/*.h`).
-  - Put static/import library files into `lib/` (e.g. `lib/libSDL2.dll.a`).
-  - Put runtime shared files into `bin/` (e.g. `bin/SDL2.dll`).
+### 4. How is SDL3 integrated, and how do I add extra libraries (like `SDL3_image` or `SDL3_ttf`)?
+- **SDL3 3.4.20 on Windows (Pre-installed)**:
+  - Headers are in `include/SDL3/*.h`, the MinGW import library is in `lib/libSDL3.dll.a`, and `bin/SDL3.dll` is copied automatically to `build/<mode>/bin/`.
+- **Adding more libraries (Drop-in)**:
+  - Put headers into `include/` (e.g. `include/SDL3_image/*.h` with a `.clang-format` disabling formatting).
+  - Put static/import library files into `lib/` (e.g. `lib/libSDL3_image.dll.a`).
+  - Put runtime shared files into `bin/` (e.g. `bin/SDL3_image.dll`).
   - Run `make run`. Everything is linked and deployed automatically!
-- **Option B (`pkg-config`)**:
-  - Install via your system package manager (e.g. `pacman -S mingw-w64-ucrt-x86_64-sdl2` or `apt install libsdl2-dev`).
-  - Set `PKG_CONFIG_PACKAGES = sdl2` in `config.mk`.
+- **Linux / macOS (`pkg-config`)**:
+  - Install SDL3 via your system package manager (e.g. `brew install sdl3` or distro `libsdl3-dev`).
+  - Set `PKG_CONFIG_PACKAGES = sdl3` in `config.mk` (`AUTO_LINK_EXCLUDE` already ignores `%.dll.a` on non-Windows hosts).
 
 ---
 

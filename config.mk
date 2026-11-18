@@ -62,10 +62,13 @@ SANITIZE ?=
 # --- Extra flags (appended to the defaults computed by the Makefile) ---------
 
 # Preprocessor flags, e.g. -DUSE_FEATURE -Ithird_party/foo
-EXTRA_CPPFLAGS ?=
+# Treat project include/ as a system include root too so third-party headers
+# (such as SDL3/SDL_main_impl.h) do not trigger -Werror on strict warnings.
+EXTRA_CPPFLAGS ?= -isystem $(INC_DIR)
 # Compiler flags, e.g. -march=native
 EXTRA_CFLAGS ?=
-# Linker flags, e.g. -mwindows (GUI app without a console on Windows)
+# Linker flags, e.g. -mwindows (Windows release GUI builds can pass -mwindows
+# to hide the console window).
 EXTRA_LDFLAGS ?=
 
 # System libraries provided by the toolchain (NOT dropped into lib/).
@@ -98,7 +101,7 @@ AUTO_LINK ?= 1
 
 # File names (patterns allowed) in lib/ that must NOT be linked automatically,
 # e.g. libSDL2_test.a or %_static.lib
-AUTO_LINK_EXCLUDE ?=
+AUTO_LINK_EXCLUDE ?= libSDL3_test.a $(if $(filter-out windows,$(PLATFORM)),%.dll.a)
 
 # The source file holding main(). It is left out when linking the test
 # executables (each test has its own main()) and for library projects.

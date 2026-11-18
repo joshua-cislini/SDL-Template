@@ -12,7 +12,7 @@ make test
 ## How It Works
 
 1. **Automated Test Suite Discovery**:
-   - Every file matching `tests/test_*.c` (e.g., `test_greeting.c`, `test_parser.c`) is automatically recognized as an independent test suite.
+   - Every file matching `tests/test_*.c` (e.g., `test_app.c`, `test_parser.c`) is automatically recognized as an independent test suite.
    - Each test file is compiled into its own isolated executable:
      ```text
      build/<mode>/bin/test_<name>[.exe]
@@ -98,7 +98,7 @@ The runner displays cleanly formatted output:
   PASS  test_addition
   PASS  test_division_by_zero
   2/2 tests passed (3 checks, 0 failed)
-All tests passed: test_calculator test_greeting
+All tests passed: test_app test_calculator
 ```
 
 ---
@@ -107,8 +107,8 @@ All tests passed: test_calculator test_greeting
 
 You can build and run a specific test suite using its target name:
 ```bash
-# Run only test_greeting
-make run-test_greeting
+# Run only test_app
+make run-test_app
 
 # Run only test_calculator
 make run-test_calculator
